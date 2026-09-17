@@ -1,0 +1,41 @@
+const readline = require('readline');
+
+const input = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+let count;
+let checked = 0;
+
+input.on('line', (line) => {
+    const number = Number(line.trim());
+
+    if (count === undefined) {
+        count = number;
+        return;
+    }
+
+    if (checked < count) {
+        console.log(isPrime(number) ? 'TAK' : 'NIE');
+        checked++;
+
+        if (checked === count) {
+            input.close();
+        }
+    }
+});
+
+function isPrime(number) {
+    if (number < 2) {
+        return false;
+    }
+
+    for (let divisor = 2; divisor <= Math.sqrt(number); divisor++) {
+        if (number % divisor === 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
