@@ -1,0 +1,30 @@
+const readline = require('readline');
+
+const lastTwoDigits = [1, 1, 2, 6, 24, 20, 20, 40, 20, 80];
+let testCases;
+let casesRead = 0;
+
+const input = readline.createInterface({
+	input: process.stdin,
+	output: process.stdout,
+});
+
+input.on('line', (line) => {
+	const numbers = line.trim().split(/\s+/).filter(Boolean).map(Number);
+
+	for (const number of numbers) {
+		if (testCases === undefined) {
+			testCases = number;
+			continue;
+		}
+
+		const value = number >= 10 ? 0 : lastTwoDigits[number];
+		console.log(`${Math.floor(value / 10)} ${value % 10}`);
+		casesRead++;
+
+		if (casesRead === testCases) {
+			input.close();
+			return;
+		}
+	}
+});
