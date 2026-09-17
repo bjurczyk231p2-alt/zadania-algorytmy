@@ -1,0 +1,46 @@
+const readline = require('readline');
+
+const cycles = [
+	[0],
+	[1],
+	[2, 4, 8, 6],
+	[3, 9, 7, 1],
+	[4, 6],
+	[5],
+	[6],
+	[7, 9, 3, 1],
+	[8, 4, 2, 6],
+	[9, 1]
+];
+
+const terminal = readline.createInterface({
+	input: process.stdin,
+	output: process.stdout
+});
+
+let numberOfCases;
+let currentCase = 0;
+let firstNumber;
+
+terminal.on('line', (line) => {
+	const numbers = line.trim().split(/\s+/).map(Number);
+
+	for (const number of numbers) {
+		if (numberOfCases === undefined) {
+			numberOfCases = number;
+		} else if (firstNumber === undefined) {
+			firstNumber = number;
+		} else if (currentCase < numberOfCases) {
+			const cycle = cycles[firstNumber % 10];
+			const position = (number - 1) % cycle.length;
+
+			console.log(cycle[position]);
+			currentCase += 1;
+			firstNumber = undefined;
+		}
+	}
+
+	if (currentCase === numberOfCases) {
+		terminal.close();
+	}
+});
