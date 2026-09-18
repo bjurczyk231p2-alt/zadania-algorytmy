@@ -1,0 +1,131 @@
+const fs = require('fs');
+
+const input = fs.readFileSync(0, 'utf8').trim();
+if (input.length === 0) {
+	process.exit(0);
+}
+
+const tokens = input.split(/\s+/);
+let position = 0;
+const testCount = Number(tokens[position++]);
+const output = [];
+
+function longestFalseRun(hints, coordinates, events) {
+	const hintCount = hints.length;
+	const treeSize = hintCount * 4 + 5;
+	const prefix = new Int32Array(treeSize);
+	const suffix = new Int32Array(treeSize);
+	const best = new Int32Array(treeSize);
+	const length = new Int32Array(treeSize);
+	const isFalse = new Uint8Array(hintCount);
+
+	function pull(node) {
+		const left = node * 2;
+		const right = left + 1;
+		length[node] = length[left] + length[right];
+		prefix[node] = prefix[left] === length[left]
+			? length[left] + prefix[right]
+			: prefix[left];
+		suffix[node] = suffix[right] === length[right]
+			? length[right] + suffix[left]
+			: suffix[right];
+		best[node] = Math.max(best[left], best[right], suffix[left] + prefix[right]);
+	}
+
+	function build(node, left, right) {
+		if (left === right) {
+			length[node] = 1;
+			prefix[node] = isFalse[left];
+			suffix[node] = isFalse[left];
+			best[node] = isFalse[left];
+			return;
+		}
+
+		const middle = Math.floor((left + right) / 2);
+		build(node * 2, left, middle);
+		build(node * 2 + 1, middle + 1, right);
+		pull(node);
+	}
+
+	function update(node, left, right, index) {
+		if (left === right) {
+			isFalse[index] ^= 1;
+			prefix[node] = isFalse[index];
+			suffix[node] = isFalse[index];
+			best[node] = isFalse[index];
+			return;
+		}
+
+		const middle = Math.floor((left + right) / 2);
+		if (index <= middle) {
+			update(node * 2, left, middle, index);
+		} else {
+			update(node * 2 + 1, middle + 1, right, index);
+		}
+		pull(node);
+	}
+
+	function flip(index) {
+		update(1, 0, hintCount - 1, index);
+	}
+
+	function isTrue(hint, value) {
+		if (hint.operator === '<') return value < hint.limit;
+		if (hint.operator === '>') return value > hint.limit;
+		return value === hint.limit;
+	}
+
+	for (let index = 0; index < hintCount; index += 1) {
+		isFalse[index] = isTrue(hints[index], 1) !== hints[index].answer;
+	}
+	build(1, 0, hintCount - 1);
+	let answer = best[1];
+
+	for (const coordinate of coordinates) {
+		if (coordinate === 1) {
+			for (const index of events.get(coordinate)) {
+				if (hints[index].operator !== '<') flip(index);
+			}
+			answer = Math.min(answer, best[1]);
+			continue;
+		}
+
+		for (const index of events.get(coordinate)) {
+			if (hints[index].operator !== '>') flip(index);
+		}
+		answer = Math.min(answer, best[1]);
+
+		for (const index of events.get(coordinate)) {
+			if (hints[index].operator !== '<') flip(index);
+		}
+		answer = Math.min(answer, best[1]);
+	}
+
+	return answer;
+}
+
+for (let testIndex = 0; testIndex < testCount; testIndex += 1) {
+	const hintCount = Number(tokens[position++]);
+	const hints = [];
+	const byCoordinate = new Map();
+
+	for (let index = 0; index < hintCount; index += 1) {
+		const operator = tokens[position++];
+		const limit = Number(tokens[position++]);
+		const answer = tokens[position++] === 'tak';
+		hints.push({ operator, limit, answer });
+
+		if (!byCoordinate.has(limit)) byCoordinate.set(limit, []);
+		byCoordinate.get(limit).push(index);
+	}
+
+	const coordinates = [...byCoordinate.keys()].sort((a, b) => a - b);
+
+	if (hintCount === 0) {
+		output.push('0');
+	} else {
+		output.push(String(longestFalseRun(hints, coordinates, byCoordinate)));
+	}
+}
+
+console.log(output.join('\n'));
