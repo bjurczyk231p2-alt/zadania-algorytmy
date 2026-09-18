@@ -1,0 +1,78 @@
+const readline = require('readline');
+
+function solve(values) {
+	let position = 0;
+	const testCount = values[position++];
+	const results = [];
+
+	for (let testIndex = 0; testIndex < testCount; testIndex += 1) {
+		const measurementCount = values[position++];
+		const measurements = values.slice(position, position + measurementCount);
+		position += measurementCount;
+
+		const totalChange = measurements.reduce((sum, measurement) => sum + measurement, 0);
+		let possibleSpeeds = 1n << BigInt(totalChange);
+
+		for (const measurement of measurements) {
+			const shift = BigInt(measurement);
+			possibleSpeeds = (possibleSpeeds << shift) | (possibleSpeeds >> shift);
+		}
+
+		let minimumSpeed = 0;
+		while (((possibleSpeeds >> BigInt(totalChange + minimumSpeed)) & 1n) === 0n &&
+					 ((possibleSpeeds >> BigInt(totalChange - minimumSpeed)) & 1n) === 0n) {
+			minimumSpeed += 1;
+		}
+
+		let maximumSpeed = totalChange;
+		while (((possibleSpeeds >> BigInt(totalChange + maximumSpeed)) & 1n) === 0n &&
+					 ((possibleSpeeds >> BigInt(totalChange - maximumSpeed)) & 1n) === 0n) {
+			maximumSpeed -= 1;
+		}
+
+		results.push(`${minimumSpeed} ${maximumSpeed}`);
+	}
+
+	return results.join('\n');
+}
+
+function requiredValueCount(values) {
+	if (values.length === 0) {
+		return null;
+	}
+
+	let position = 1;
+	const testCount = values[0];
+
+	for (let testIndex = 0; testIndex < testCount; testIndex += 1) {
+		if (values.length <= position) {
+			return null;
+		}
+
+		const measurementCount = values[position++];
+		position += measurementCount;
+
+		if (values.length < position) {
+			return null;
+		}
+	}
+
+	return position;
+}
+
+const values = [];
+const input = readline.createInterface({
+	input: process.stdin,
+	output: process.stdout,
+});
+
+input.on('line', (line) => {
+	const numbers = line.trim().split(/\s+/).filter(Boolean).map(Number);
+	values.push(...numbers);
+
+	const expectedCount = requiredValueCount(values);
+	if (expectedCount !== null && values.length >= expectedCount) {
+		console.log(solve(values.slice(0, expectedCount)));
+		input.close();
+	}
+});
